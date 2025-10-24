@@ -15,7 +15,7 @@ class Partition():
     def __getitem__(self, index):
         '''Given index, get the data according to the partitioned index'''
         # BEGIN ASSIGN5_1_1
-        raise NotImplementedError("Data Parallel Not Implemented Yet")
+        return self.data[self.index[index]]
         # END ASSIGN5_1_1
 
 class DataPartitioner():
@@ -29,7 +29,14 @@ class DataPartitioner():
         2. Create different partitions of indices according to `sizes` and store in `self.partitions`
         '''
         # BEGIN ASSIGN5_1_1
-        raise NotImplementedError("Data Parallel Not Implemented Yet")
+        indices = list(range(len(self.data)))
+        rng.shuffle(indices)
+        start_idx = 0
+        for size in sizes:
+            partition_size = int(size * len(indices))
+            partition_indices = indices[start_idx:start_idx + partition_size]
+            self.partitions.append(Partition(data, partition_indices))
+            start_idx += partition_size
         # END ASSIGN5_1_1
 
     def use(self, partition):
@@ -38,7 +45,7 @@ class DataPartitioner():
         Just one line of code. Think it simply.
         '''
         # BEGIN ASSIGN5_1_1
-        raise NotImplementedError("Data Parallel Not Implemented Yet")
+        return self.partitions[partition]
         # END ASSIGN5_1_1
 
 def partition_dataset(rank, world_size, dataset, batch_size=128, collate_fn=None):
@@ -54,5 +61,10 @@ def partition_dataset(rank, world_size, dataset, batch_size=128, collate_fn=None
     4. Wrap the dataset with `DataLoader`, remember to customize the `collate_fn`
     """
     # BEGIN ASSIGN5_1
-    raise NotImplementedError("Data Parallel Not Implemented Yet")
+    partition_batch_size = batch_size // world_size
+    sizes = [1.0 / world_size] * world_size
+    data_partitioner = DataPartitioner(dataset, sizes)
+    parition_dataset = data_partitioner.use(rank)
+    dataloader = DataLoader(dataset=parition_dataset, batch_size=partition_batch_size, collate_fn=collate_fn)
+    return dataloader
     # END ASSIGN5_1
