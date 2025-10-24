@@ -42,7 +42,9 @@ def setup(rank, world_size, backend):
     2. Use `torch.distributed` to init the process group
     '''
     # BEGIN ASSIGN5_1_2
-    raise NotImplementedError("Data Parallel Not Implemented Yet")
+    os.environ['MASTER_ADDR'] = 'localhost'
+    os.environ['MASTER_PORT'] = '11868'
+    dist.init_process_group(backend=backend, rank=rank, world_size=world_size)
     # END ASSIGN5_1_2
 
 
@@ -188,8 +190,32 @@ if __name__ == '__main__':
     2. You should start the processes to work and terminate resources properly
     '''
     # BEGIN ASSIGN5_1_3
-    world_size = None  # TODO: Define the number of GPUs
-    backend = None  # TODO: Define your backend for communication, we suggest using 'nccl'
+    world_size = args.world_size
+    backend = 'nccl'  # TODO: Define your backend for communication, we suggest using 'nccl'
     
-    raise NotImplementedError("Data Parallel Not Implemented Yet")
+    Process.set_start_method('spawn')
+
+    for rank in range(world_size):
+        p = Process(target=run_dp, args=(
+            rank, 
+            world_size, 
+            backend,
+            args.dataset,
+            args.model_max_length,
+            args.n_epochs,
+            args.batch_size,
+            args.learning_rate
+            ))
+        p.start()
+        processes.append(p)
+    
+    # Wait for all prcesses and handle cleanup
+    try:
+        for p in processes:
+            p.join()
+    except KeyboardInterrupt:
+        print("Terminating Distributed Process...")
+        for p in processes:
+            p.terminate()
+            p.join()
     # END ASSIGN5_1_3
