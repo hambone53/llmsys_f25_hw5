@@ -41,14 +41,14 @@ if __name__ == '__main__':
     #     ['Data Parallel - Two GPU', 'Single GPU'],
     #     'ddp_vs_rn_token.png')
 
-    pp_mean, pp_std = 21.578580260276794, 0.20210587978363037
+    pp_mean, pp_std = 14.184119701385498, 0.14570045471191406
     mp_mean, mp_std = 15.521642684936523, 0.142592191696167
     plot([pp_mean, mp_mean],
         [pp_std, mp_std],
         ['Pipeline Parallel', 'Model Parallel'],
         'pp_vs_mp.png')
     
-    plot_tokens_sec([29661.6431, 41236.22932683023],
-        [277.812, 378.8235],
+    plot_tokens_sec([45125.64407536964, 41236.22932683023],
+        [463.5343609168158, 378.8235],
         ['Pipeline Parallel', 'Model Parallel'],
         'pp_mp_token_sec.png')
