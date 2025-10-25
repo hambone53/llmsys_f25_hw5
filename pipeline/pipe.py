@@ -26,7 +26,16 @@ def _clock_cycles(num_batches: int, num_partitions: int) -> Iterable[List[Tuple[
     This function should yield schedules for each clock cycle.
     '''
     # BEGIN ASSIGN5_2_1
-    raise NotImplementedError("Schedule Generation Not Implemented Yet")
+    total_clock_cycles = num_batches + num_partitions - 1
+    for k in range(total_clock_cycles):
+        schedule = []
+
+        for j in range(num_partitions): #See if we have a batch this clock cycle for a partition
+            i = k - j
+            if 0 <= i < num_batches:
+                schedule.append((i,j))
+
+        yield schedule
     # END ASSIGN5_2_1
 
 class Pipe(nn.Module):
