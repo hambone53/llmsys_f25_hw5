@@ -62,7 +62,22 @@ class Pipe(nn.Module):
         Please note that you should put the result on the last device. Putting the result on the same device as input x will lead to pipeline parallel training failing.
         '''
         # BEGIN ASSIGN5_2_2
-        raise NotImplementedError("Pipeline Parallel Not Implemented Yet")
+        micro_size = x.size(0) // self.split_size
+        batches = []
+        for split in range(self.split_size):
+            start_idx = split * micro_size
+            end_idx = (split + 1) * micro_size if split < self.split_size - 1 else x.size(0)
+            batch = x[start_idx:end_idx]
+            batches.append(batch)
+        
+        for schedule in _clock_cycles(len(batches), len(self.partitions)):
+            self.compute(batches=batches, schedule=schedule)
+
+        # Now we have all the batches move to last device, we should concatenate and return
+        last_device = self.devices[-1]
+        result_batches = [batch.to(last_device) for batch in batches]
+        result = torch.cat(result_batches, dim=0)
+        return result
         # END ASSIGN5_2_2
 
     def compute(self, batches, schedule: List[Tuple[int, int]]) -> None:
@@ -78,6 +93,32 @@ class Pipe(nn.Module):
         devices = self.devices
 
         # BEGIN ASSIGN5_2_2
-        raise NotImplementedError("Pipeline Parallel Not Implemented Yet")
+        for micro_batch_idx, partition_idx in schedule:
+            # Get partition module and microbatch data from the schedule
+            partition_module = self.partitions[partition_idx]
+            micro_batch_data = batches[micro_batch_idx]
+
+            # Move data to the correct device
+            target_device = self.devices[partition_idx]
+            micro_batch_data = micro_batch_data.to(target_device)
+
+            # Create task
+            def make_compute_fn(module, data):
+                return lambda: module.forward(data)
+            
+            task = Task(make_compute_fn(partition_module, micro_batch_data))
+
+            # Send task to worker
+            in_queue = self.in_queues[partition_idx]
+            in_queue.put(task)
+
+            # Receive task output
+            out_queue = self.out_queues[partition_idx]
+            success, result = out_queue.get()
+
+            # Store result back to the batches
+            if success:
+                task_result, batch_result = result
+                batches[micro_batch_idx] = batch_result
         # END ASSIGN5_2_2
 
