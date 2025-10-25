@@ -15,6 +15,17 @@ from .pipe import Pipe
 from .partition import WithDevice, _retrieve_device
 from .model import GPT2ModelCustom, GPT2LMHeadModelCustom
 
+class GPT2BlockWrapper(nn.Module):
+    def __init__(self, gpt2_block):
+        super().__init__()
+        self.block = gpt2_block
+    
+    def forward(self, hidden_states):
+        # Call the GPT2Block and extract only the hidden states
+        outputs = self.block(hidden_states)
+        return outputs[0]  # Return only hidden states (first element of tuple)
+
+
 class ExtractFirstItem(nn.Module):
     def __init__(self):
         super(ExtractFirstItem, self).__init__()
@@ -41,7 +52,16 @@ class GPT2ModelParallel(GPT2ModelCustom):
 
         # BEGIN ASSIGN5_2_3
         pipe = None
-        raise NotImplementedError("Pipeline Parallel Not Implemented Yet")
+        self.pipeline_parallel = True
+        pipe_model_list = []
+        for i, gpt2_block in enumerate(self.h):
+            # Add the block getting the hidden state.
+            wrapped_block = GPT2BlockWrapper(gpt2_block=gpt2_block)
+            pipe_model_list.append(wrapped_block)
+
+        pipe_model = nn.Sequential(*pipe_model_list) #Expand so that we get nn.Sequential(m1, m2, m3, ...)
+        pipe = Pipe(pipe_model, split_size=split_size)
+
         # END ASSIGN5_2_3
         self.h_pp = pipe
 

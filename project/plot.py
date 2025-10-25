@@ -31,19 +31,24 @@ if __name__ == '__main__':
     single_mean, single_std = None, None
     device0_mean, device0_std =  None, None
     device1_mean, device1_std =  None, None
-    plot([28.414332, 27.808804, 49.08619475364685],
-        [0.410696, 0.214668, 0.007076],
-        ['Data Parallel - GPU0', 'Data Parallel - GPU1', 'Single GPU'],
-        'ddp_vs_rn.png')
+    # plot([28.414332, 27.808804, 49.08619475364685],
+    #     [0.410696, 0.214668, 0.007076],
+    #     ['Data Parallel - GPU0', 'Data Parallel - GPU1', 'Single GPU'],
+    #     'ddp_vs_rn.png')
 
-    plot_tokens_sec([161793.82, 82514.61707],
-        [984.23, 478.23],
-        ['Data Parallel - Two GPU', 'Single GPU'],
-        'ddp_vs_rn_token.png')
+    # plot_tokens_sec([161793.82, 82514.61707],
+    #     [984.23, 478.23],
+    #     ['Data Parallel - Two GPU', 'Single GPU'],
+    #     'ddp_vs_rn_token.png')
 
-    pp_mean, pp_std = None, None
-    mp_mean, mp_std = None, None
-    # plot([pp_mean, mp_mean],
-    #     [pp_std, mp_std],
-    #     ['Pipeline Parallel', 'Model Parallel'],
-    #     'pp_vs_mp.png')
+    pp_mean, pp_std = 21.578580260276794, 0.20210587978363037
+    mp_mean, mp_std = 15.521642684936523, 0.142592191696167
+    plot([pp_mean, mp_mean],
+        [pp_std, mp_std],
+        ['Pipeline Parallel', 'Model Parallel'],
+        'pp_vs_mp.png')
+    
+    plot_tokens_sec([29661.6431, 41236.22932683023],
+        [277.812, 378.8235],
+        ['Pipeline Parallel', 'Model Parallel'],
+        'pp_mp_token_sec.png')

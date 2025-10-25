@@ -1,0 +1,23 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug Model Parallel",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/project/run_pipeline.py",
+            "args": ["--model_parallel_mode=model_parallel"],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "Debug Pipeline Parallel",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/project/run_pipeline.py",
+            "args": ["--model_parallel_mode=pipeline_parallel"],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}

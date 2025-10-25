@@ -93,18 +93,23 @@ class Pipe(nn.Module):
         devices = self.devices
 
         # BEGIN ASSIGN5_2_2
+        task_info = [] #Track each task
+
+        # Launch all workers for this schedule
         for micro_batch_idx, partition_idx in schedule:
             # Get partition module and microbatch data from the schedule
-            partition_module = self.partitions[partition_idx]
+            partition_module = partitions[partition_idx]
             micro_batch_data = batches[micro_batch_idx]
-
             # Move data to the correct device
-            target_device = self.devices[partition_idx]
-            micro_batch_data = micro_batch_data.to(target_device)
+            target_device = devices[partition_idx]
+            micro_batch_data = micro_batch_data.to(target_device, non_blocking=True)
 
             # Create task
             def make_compute_fn(module, data):
-                return lambda: module.forward(data)
+                def compute_fn():
+                    with torch.cuda.device(data.device):
+                        return module(data)
+                return compute_fn
             
             task = Task(make_compute_fn(partition_module, micro_batch_data))
 
@@ -112,6 +117,11 @@ class Pipe(nn.Module):
             in_queue = self.in_queues[partition_idx]
             in_queue.put(task)
 
+            # Keep track of what was sent.
+            task_info.append((micro_batch_idx, partition_idx))
+
+        # Retrieve all results form workers
+        for micro_batch_idx, partition_idx in task_info:
             # Receive task output
             out_queue = self.out_queues[partition_idx]
             success, result = out_queue.get()
@@ -120,5 +130,7 @@ class Pipe(nn.Module):
             if success:
                 task_result, batch_result = result
                 batches[micro_batch_idx] = batch_result
+            else:
+                raise RuntimeError(f"Task failed: {result}")
         # END ASSIGN5_2_2
 
