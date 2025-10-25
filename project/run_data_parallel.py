@@ -32,7 +32,10 @@ def average_gradients(model):
     3. Average the gradients over the world_size (total number of devices)
     '''
     # BEGIN ASSIGN5_1_2
-    raise NotImplementedError("Data Parallel Not Implemented Yet")
+    size = float(dist.get_world_size())
+    for param in model.parameters():
+        dist.all_reduce(param.grad.data, dist.ReduceOp.SUM)
+        param.grad.data /= size
     # END ASSIGN5_1_2
 
 def setup(rank, world_size, backend):
@@ -69,7 +72,7 @@ def run_dp(
     optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
 
     dataset = {
-        split: datasets.load_dataset(dataset_name, split=split)['translation']
+        split: datasets.load_dataset(dataset_name, split=split, trust_remote_code=True)['translation']
         for split in ['train', 'validation', 'test']
     }
     src_key, tgt_key = 'de', 'en'
@@ -193,7 +196,7 @@ if __name__ == '__main__':
     world_size = args.world_size
     backend = 'nccl'  # TODO: Define your backend for communication, we suggest using 'nccl'
     
-    Process.set_start_method('spawn')
+    #Process.set_start_method('spawn')
 
     for rank in range(world_size):
         p = Process(target=run_dp, args=(
